@@ -21,6 +21,8 @@ const faqRoutes = require('./routes/faqRoutes');
 const stripeWebhook = require('./utilities/webhook');
 const historyRoutes = require('./routes/historyRoutes');
 const securitypassRoutes = require('./routes/securitypassRoutes');
+const OtpRoutes = require('./routes/OtpRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 const PORT = 3000;
 
@@ -30,7 +32,7 @@ app.use(express.json());
 
 app.use(cookieParser());
 app.use(cors({
-  origin: 'http://localhost:3003',
+  origin: 'http://localhost:3001',
   credentials: true,
 }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -54,7 +56,7 @@ app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api", fileuploadRoutes);
 app.use("/api/voice-memo", voiceuploadRoutes);
 app.use("/api/default", defaultfileRoutes);
-
+app.use("/api/otp", OtpRoutes);
 app.use('/api', membershipRoutes);
 app.use("/api/help-support", helpandsupport);
 app.use("/api/designee", designeeRoutes);
@@ -65,7 +67,7 @@ app.use("/api", faqRoutes);
 app.use("/api", emailRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/gain-access", securitypassRoutes);
-
+app.use("/admin", adminRoutes);
 
 
 const DB_URI = process.env.DB_URI;

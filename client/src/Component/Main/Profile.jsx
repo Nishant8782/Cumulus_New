@@ -486,8 +486,9 @@ const showAlert = (variant, title, message) => {
 
         setFolderSize({ value: displaySize, unit });
       } catch (err) {
+       const unit = 'KB';
         // console.error('Error fetching folder size:', err);
-        setError('Failed to retrieve folder size');
+        setFolderSize({ value: 0,unit });
       }
     };
 

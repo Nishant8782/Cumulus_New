@@ -10,8 +10,12 @@ const prices = {
 
 exports.createCheckoutSession = async (sessionData) => {
   try {
-    const { planType, duration } = sessionData;
-    let priceId;
+    const { planType, duration ,user_id,subscription_id} = sessionData;
+    console.log("planType:", planType);
+    console.log("duration:", duration);
+        let priceId;
+
+    if (!user_id) throw new Error("User ID is required");
 
     if (planType === "legacyPremium") {
       priceId = duration === "monthly" ? prices.legacyPremiumMonthly : prices.legacyPremiumAnnual;
@@ -44,12 +48,14 @@ exports.createCheckoutSession = async (sessionData) => {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       success_url: `${frontend_URL}/enterdashboard`,
-      cancel_url: `${frontend_URL}/login`,
+      cancel_url: `${frontend_URL}/Subscription`,
       metadata: {
+        user_id,
         planType,
         duration,
         startDate: formattedStartDate,
         endDate: formattedEndDate,
+        subscription_id: subscription_id || "",
       },
     });
 

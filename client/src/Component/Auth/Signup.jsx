@@ -19,6 +19,7 @@ const Signup = () => {
     const [isVerifyButtonVisible, setIsVerifyButtonVisible] = useState(false);
     const [fullName, setFullName] = useState('');
     const [otpSent, setOtpSent] = useState(false);
+    const [countryCode, setCountryCode] = useState('+1'); 
     const [email, setEmail] = useState('');
     const [confirmationResult, setConfirmationResult] = useState(null);
     const [securityQuestion, setSecurityQuestion] = useState(""); // Security Question input
@@ -101,7 +102,7 @@ hideLoading();
     
             console.log('Response status:', response.status); // Log response status
     
-            if (response.status === 404) {
+            if (response.status === 404 ||response.status === 400) {
                 // User not found
             
                 setOtpSent(true);
@@ -238,6 +239,7 @@ hideLoading();
 
     };
     useEffect(() => {
+        
         const fetchQuestions = async () => {
             try {
                 const response = await axios.get(`${API_URL}/api/auth/security-questions`);
@@ -414,51 +416,46 @@ hideLoading();
     };
 
 
-
-
-    const sendOtpWithTwilio = async (phoneNumber) => {
-        console.log("Payload:", { phone_number: `+91${phoneNumber}` });
-      
-        if (!phoneNumber || phoneNumber.trim() === '') {
-          alert('Phone number is required.');
-          return;
-        }
-      
-        setLoading(true);
-        try {
-          console.log("Sending OTP...");
-      
-          // Use FormData with x-www-form-urlencoded format
-          const formData = new URLSearchParams();
-          formData.append('phone_number', `+91${phoneNumber}`);
-      
-          const response = await axios.post('https://toyflix.in/api/sendOtp.php', formData.toString(), {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-          });
-      
-          console.log("Response received:", response);
-      console.log("1");
-          if (response.data.success) {
-            console.log("2");
-            setMessage('OTP sent successfully!');
-            // navigation.navigate('Authentication',{phoneNumber});
-            handleNextStep();
-          } else {
-            console.log("3");
-            setMessage('Error response from server:', response.data);
-            // Alert.alert('Failed to send OTP:', response.data.phone_number || 'Unknown error.');
-          }
-          console.log("4");
-        } catch (error) {
-            console.log("5");
-            handleNextStep();
-            // setMessage('Error during OTP request:', error);    // only for this api i need to fix this in future when i have proper twillio account
-        //   Alert.alert('Error sending OTP:', error.message || 'Something went wrong.');
-        } 
+    const handleCountryCodeChange = (event) => {
+        setCountryCode(event.target.value);
       };
 
+      const sendOtpWithTwilio = async () => {
+        console.log("Payload:", { phone_number: `${countryCode}${phoneNumber}` });
+    
+        if (!phoneNumber || phoneNumber.trim() === '') {
+            alert('Phone number is required.');
+            return;
+        }
+    
+        setLoading(true);
+        try {
+            console.log("Sending OTP...");
+    
+            const payload = { phoneNumber: `${countryCode}${phoneNumber}` };
+    
+            const response = await axios.post(`${API_URL}/api/otp/send-otp`, payload, {
+                headers: {
+                    'Content-Type': 'application/json', // JSON format mein bhej raha hai
+                },
+            });
+    
+            console.log("Response received:", response);
+    
+            if (response.data.success) {
+                setMessage('OTP sent successfully!');
+                handleNextStep();
+            } else {
+                setMessage(`Error: ${response.data.phone_number || 'Unknown error.'}`);
+            }
+        } catch (error) {
+            console.error("Error sending OTP:", error);
+            setMessage('Something went wrong.');
+        } finally {
+            setLoading(false);
+        }
+    };
+    
 
       const verifyOTP = async () => { 
         console.log("otp", otp);
@@ -473,7 +470,7 @@ hideLoading();
         console.log("otp", otp);
     
         // Making the POST request using axios
-        const response = await axios.post('https://toyflix.in/api/verifyOtp.php', formData.toString(), {
+        const response = await axios.post(`${API_URL}/api/otp/verify-otp`, formData.toString(), {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
@@ -497,9 +494,6 @@ hideLoading();
         }
       };
 
-
-
-  
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -623,7 +617,7 @@ hideLoading();
         localStorage.setItem("token", token);
         localStorage.setItem("userId", user);
         // Navigate to the desired page
-        navigate('/Subscription');  // Replace '/your-new-page' with the path to your new page
+        navigate('/subscription');  // Replace '/your-new-page' with the path to your new page
     };
     const handlePhoneNumberChange = (e) => {
         const value = e.target.value;
@@ -1055,23 +1049,30 @@ hideLoading();
               <span className="ml-1 md:ml-2 text-xs md:text-lg">Phone Verification</span>
             </div>
           </div>
+          <div className="flex items-center gap-2 p-4 bg-gray-100 rounded-lg shadow-md">
+          <select
+          className="border text-black border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          value={countryCode}
+          onChange={handleCountryCodeChange}
+        >
+          <option value="+1">+1 (US)</option>
+          <option value="+91">+91 (IND)</option>
+          <option value="+81">+81 (JPN)</option>
+        </select>
+  <div className="w-full">
+    <input
+      type="text"
+      id="phoneNumber"
+      value={phoneNumber}
+      onChange={handlePhoneNumberChange}
+      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none text-black"
+      placeholder="Enter phone number"
+    />
+  </div>
+</div>
 
-          <div className="mt-3">
-            <label
-              htmlFor="phoneNumber"
-              className="block text-sm font-medium shadow-sm text-black"
-            >
-              Enter Your Phone Number
-            </label>
-            <input
-              type="text"
-              id="phoneNumber"
-              value={phoneNumber}
-              onChange={handlePhoneNumberChange}
-              className="w-full mt-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-              placeholder="Enter phone number"
-            />
-          </div>
+
+          
 
           {message && (
             <div className="mt-4 p-2 border rounded-md text-center bg-gray-100 text-gray-800">

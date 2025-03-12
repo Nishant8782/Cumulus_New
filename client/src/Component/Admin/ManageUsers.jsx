@@ -78,7 +78,7 @@ const ManageUsers = () => {
                 filteredUsers.map((user) => (
                   <tr key={user._id} className="border-b hover:bg-gray-100">
                     <td className="p-3">
-                      <Link to={`/ManageUsers/user/${user._id}`} className="text-blue-500 hover:underline">
+                      <Link to={`/admin/ManageUsers/user/${user._id}`} className="text-blue-500 hover:underline">
                         {user.username}
                       </Link>
                     </td>

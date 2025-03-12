@@ -879,7 +879,10 @@ const Sidebar = ({ onFolderSelect }) => {
               
             >
               {/* {viewAllDesigners ? "View Less" : "View All"} */}
-              View All
+             
+              {
+                designers.length > 0 ? <span>View All</span> : <span>Add Designee</span>
+              }
             </button>
    
 </div>
@@ -989,9 +992,9 @@ const Sidebar = ({ onFolderSelect }) => {
             {({ isActive }) => (
               <span className="flex items-center h-5 w-5">
                 <img
-                  src={isActive ? whiteemic : Microphone} // Dynamically change image based on isActive
+                  src={isActive ? whiteemic : Microphone} 
                   alt="Microphone Icon"
-                  className="h-5 w-5" // Adjust image size
+                  className="h-5 w-5" 
                 />
                 <h2 className="ml-3 text-sm text-nowrap font-medium">
                   Create A Voicememo

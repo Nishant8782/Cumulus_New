@@ -15,8 +15,22 @@ function SubscriptionCard({ data }) {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [planid, setPlanid] = useState(null);
 
-  const handleUpgradePlan = async (planName, billingCycle) => {
-    console.log("📤 Sending request with:", { planType: planName, duration: billingCycle });
+
+  useEffect(() => {
+    if (showPopup) {
+      document.body.style.overflow = "hidden"; // Disable scrolling
+    } else {
+      document.body.style.overflow = "auto"; // Enable scrolling when popup is closed
+    }
+
+    return () => {
+      document.body.style.overflow = "auto"; // Ensure scrolling is reset when unmounting
+    };
+  }, [showPopup]);
+
+
+  const handleUpgradePlan = async (planName, billingCycle,subscriptionId) => {
+    console.log("📤 Sending request with:", { planType: planName, duration: billingCycle, subscriptionId });
    const userId = localStorage.getItem("userId");
   //  const stripe = await loadStripe('pk_live_51QygE8J7Fy59EZyjsleXQrZGvGmFDKY8lv7p5uIV0Onrc11eQLMzj1Rwi8YewBVrdRFiMv7W3PSMNwZrIHXLY3zN00xFl5VsPo');
    const stripe = await loadStripe('pk_test_51QygE8J7Fy59EZyjD32cUYRILHglbcefxO4E2wpYTtV9N5RkkTVw1S2SpTSci5DOdFtzq0TIKQ4J8MCli2qZQqyA00WchFE1Ml');
@@ -29,6 +43,7 @@ function SubscriptionCard({ data }) {
       planType: planName, // Pass name instead of ID
       duration: billingCycle, // Send 'monthly' or 'yearly'
       user_id: userId,
+      subscription_id: subscriptionId || "",
     };
   
     try {
@@ -67,6 +82,7 @@ function SubscriptionCard({ data }) {
 
     if (clickedId.includes("foundation") || clickedId.includes("legacy")) {
       setSelectedPlan(data);
+      console.log("Selected Plan:", data);
       setShowPopup(true);
     } else if (clickedId.includes("heritage")) {
       navigate("/", { state: { scrollTo: "assistance" } });
@@ -76,6 +92,13 @@ function SubscriptionCard({ data }) {
 
   
   const handleConfirmSubscription = () => {
+    if (!selectedPlan) {
+      console.error("❌ No selected plan found!");
+      return;
+    }
+    
+    console.log("✅ Selected Plan:", selectedPlan); // Debugging log
+  
     let planName = null;
   
     if (selectedPlan.subscription_name.includes("Legacy")) {
@@ -84,20 +107,22 @@ function SubscriptionCard({ data }) {
       planName = "foundationStandard";
     }
   
-    if (planName) {
-      handleUpgradePlan(planName, billingCycle);  // Call function directly with correct parameters
+    if (planName && selectedPlan._id) {
+      console.log("📤 Sending subscription ID:", selectedPlan._id); // Debugging log
+      handleUpgradePlan(planName, billingCycle, selectedPlan._id);
     } else {
-      console.error("Price ID not found for the selected plan.");
+      console.error("❌ Missing price ID or subscription ID!");
     }
   
     setShowPopup(false);
   };
   
   
+  
   // Use useEffect to ensure handleUpgradePlan is called after state updates
   useEffect(() => {
     if (planid && selectedPlan) {
-      handleUpgradePlan(planid, selectedPlan.subscription_name);
+      handleUpgradePlan(planid, selectedPlan.subscription_name ,selectedPlan._id);
     }
   }, [planid]); // Runs whenever planid changes
   
@@ -129,7 +154,7 @@ function SubscriptionCard({ data }) {
       </ul>
 
       {showPopup && selectedPlan && (
-        <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h3 className="text-xl font-semibold mb-4">Choose Billing Cycle</h3>
             <div className="flex flex-col space-y-2">
@@ -251,6 +276,7 @@ function Subscription() {
 
   useEffect(() => {
     const formattedPlans = response.map((plan) => ({
+      _id: plan._id,  // ✅ Add this line
       subscription_name: plan.subscription_name,
       price: plan.cost.monthly || "Custom Pricing",
       period: plan.cost.monthly ? "/month" : null,
@@ -262,12 +288,13 @@ function Subscription() {
         ...plan.features.integrations,
         ...plan.features.extra_features,
       ],
-      buttonLabel: plan.cost.custom_pricing ? "Contact Us" : "Try Now",
+      buttonLabel: plan.cost.custom_pricing ? "Contact Us" : "Subscribe Now",
       to: plan.cost.custom_pricing ? "assistance" : "/signup",
       recommended: plan.subscription_name === "Legacy (Premium)",
     }));
     setPlans(formattedPlans);
   }, []);
+  
 
   const togglePlan = () => {
     setIsYearly((prev) => {
@@ -294,7 +321,7 @@ function Subscription() {
               ...plan.features.integrations,
               ...plan.features.extra_features,
             ],
-            buttonLabel: "Try Now",
+            buttonLabel: "Subscribe Now",
             to: "/signup",
             recommended: plan.subscription_name === "Legacy (Premium)",
           };
